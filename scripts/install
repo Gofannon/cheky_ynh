@@ -59,7 +59,6 @@ ynh_print_info "Storing installation settings..."
 ynh_app_setting_set $app domain $domain
 ynh_app_setting_set $app path $path_url
 ynh_app_setting_set $app password $password
-ynh_app_setting_set $app is_public $is_public
 
 
 #=================================================
@@ -140,7 +139,7 @@ chown -R $app: $final_path
 
 # Set the app as temporarily public for curl call
 ynh_print_info "Configuring SSOwat..."
-ynh_app_setting_set $app skipped_uris "/"
+
 # Reload SSOwat config
 yunohost app ssowatconf
 
@@ -154,9 +153,11 @@ db_pwd=$(ynh_app_setting_get $app mysqlpwd)
 ynh_local_curl "/index.php?mod=install" "password=$password" "confirmPassword=$password" "type=db" "db[host]=localhost" "db[user]=$db_name" "db[password]=$db_pwd" "db[dbname]=$db_name"
 
 # Remove the public access
-if [ $is_public -eq 0 ]
+
+# Make app public if necessary
+if [ "$is_public" -eq 1 ]
 then
-	ynh_app_setting_delete $app skipped_uris
+	ynh_permission_update --permission="main" --add="visitors"
 fi
 
 #=================================================
@@ -177,11 +178,12 @@ chown -R $app: $final_path/static/media/annonce   # needed for "Mes annonces sau
 #=================================================
 ynh_print_info "Configuring SSOwat..."
 
+
+
 # Make app public if necessary
-if [ $is_public -eq 1 ]
+if [ "$is_public" -eq 1 ]
 then
-	# unprotected_uris allows SSO credentials to be passed anyway.
-	ynh_app_setting_set $app unprotected_uris "/"
+	ynh_permission_update --permission="main" --add="visitors"
 fi
 
 #=================================================
